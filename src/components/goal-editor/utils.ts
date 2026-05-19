@@ -36,13 +36,13 @@ export function getRandomCheerLine(goalText: string, count: number) {
 export function getConfettiPosition(corner: ConfettiCorner) {
   switch (corner) {
     case "top-left":
-      return { left: 18, top: 24 };
+      return { left: "42%", top: "40%" };
     case "top-right":
-      return { right: 18, top: 24 };
+      return { left: "58%", top: "40%" };
     case "bottom-left":
-      return { left: 18, bottom: 112 };
+      return { left: "44%", top: "54%" };
     default:
-      return { right: 18, bottom: 112 };
+      return { left: "56%", top: "54%" };
   }
 }
 
@@ -75,7 +75,7 @@ const CREW_DIALOGUES: Array<Record<CrewProgressDialoguePhase, string>> = [
   {
     settled: "",
     ready: "크루 준비 완료!",
-    launching: "오늘의 목표판, 가동합니다!",
+    launching: "오늘의 미션, 가동합니다!",
   },
 ];
 

@@ -1,10 +1,15 @@
 ﻿import { Storage } from "@apps-in-toss/web-framework";
 import { create } from "zustand";
+import {
+  ALL_CREW_CHARACTERS,
+  DEFAULT_CREW_IDS,
+} from "../components/goal-editor/constants";
 
 export interface Goal {
   id: string;
   text: string;
   emoji: string;
+  crewId?: string;
   done: boolean;
   createdAt: string;
 }
@@ -13,6 +18,7 @@ export interface GoalInput {
   id?: string;
   text: string;
   emoji: string;
+  crewId?: string;
 }
 
 export interface Character {
@@ -23,16 +29,35 @@ export interface Character {
   requiredCount: number;
 }
 
-export const ALL_CHARACTERS: Character[] = [
-  { id: "cat", emoji: "🐱", name: "냥냥이", unlockedAt: "", requiredCount: 1 },
-  { id: "dog", emoji: "🐶", name: "멍멍이", unlockedAt: "", requiredCount: 2 },
-  { id: "hamster", emoji: "🐹", name: "햄찌", unlockedAt: "", requiredCount: 3 },
-  { id: "rabbit", emoji: "🐰", name: "토리", unlockedAt: "", requiredCount: 5 },
-  { id: "fox", emoji: "🦊", name: "여우비", unlockedAt: "", requiredCount: 7 },
-  { id: "frog", emoji: "🐸", name: "개구리왕", unlockedAt: "", requiredCount: 10 },
-  { id: "unicorn", emoji: "🦄", name: "유니콘", unlockedAt: "", requiredCount: 15 },
-  { id: "panda", emoji: "🐼", name: "판다곰", unlockedAt: "", requiredCount: 20 },
-];
+export interface CompletedGoalRecord {
+  key: string;
+  text: string;
+  emoji: string;
+  count: number;
+  lastCompletedAt: string;
+}
+
+export const ALL_CHARACTERS: Character[] = ALL_CREW_CHARACTERS.map(
+  (character) => ({
+    id: character.id,
+    emoji: character.emoji,
+    name: character.name,
+    unlockedAt: "",
+    requiredCount: character.requiredCount,
+  }),
+);
+
+const DEFAULT_UNLOCKED_CHARACTERS: Character[] = ALL_CHARACTERS.filter(
+  (character) => (DEFAULT_CREW_IDS as readonly string[]).includes(character.id),
+).map((character) => ({ ...character, unlockedAt: "default" }));
+
+const LEGACY_CHARACTER_ID_MAP: Record<string, string> = {
+  cat: "nabi",
+  rabbit: "dalto",
+  fox: "yeowoobi",
+  panda: "podo",
+  unicorn: "uni",
+};
 
 export const RECOMMENDED_GOALS: GoalInput[] = [
   { text: "물 마시기", emoji: "💧" },
@@ -48,6 +73,8 @@ interface PersistedState {
   goals: Goal[];
   unlockedCharacters: Character[];
   totalCompletionCount: number;
+  dailyCompletedGoalIds: string[];
+  completedGoalRecords: CompletedGoalRecord[];
   lastResetDate: string;
   hasOnboarded: boolean;
 }
@@ -88,9 +115,77 @@ function normalizeGoal(goal: Partial<Goal>, fallbackIndex: number): Goal {
     id: goal.id ?? `legacy-${fallbackIndex}`,
     text: goal.text ?? "",
     emoji: goal.emoji ?? "💧",
+    crewId: goal.crewId,
     done: goal.done ?? false,
     createdAt: goal.createdAt ?? new Date().toISOString(),
   };
+}
+
+function createGoalRecordKey(goal: Pick<Goal, "text" | "emoji">): string {
+  return `${goal.emoji}:${goal.text.trim().toLowerCase()}`;
+}
+
+function updateCompletedGoalRecords(
+  records: CompletedGoalRecord[],
+  goal: Goal,
+): CompletedGoalRecord[] {
+  const now = new Date().toISOString();
+  const key = createGoalRecordKey(goal);
+  const existingRecord = records.find((record) => record.key === key);
+
+  if (existingRecord == null) {
+    return [
+      {
+        key,
+        text: goal.text,
+        emoji: goal.emoji,
+        count: 1,
+        lastCompletedAt: now,
+      },
+      ...records,
+    ];
+  }
+
+  return records
+    .map((record) =>
+      record.key === key
+        ? {
+            ...record,
+            text: goal.text,
+            emoji: goal.emoji,
+            count: record.count + 1,
+            lastCompletedAt: now,
+          }
+        : record,
+    )
+    .sort((left, right) =>
+      right.lastCompletedAt.localeCompare(left.lastCompletedAt),
+    );
+}
+
+function withDefaultUnlockedCharacters(characters: Character[] = []) {
+  const knownCharactersById = new Map(
+    ALL_CHARACTERS.map((character) => [character.id, character]),
+  );
+  const mergedById = new Map<string, Character>();
+
+  DEFAULT_UNLOCKED_CHARACTERS.forEach((character) => {
+    mergedById.set(character.id, character);
+  });
+
+  characters.forEach((character) => {
+    const characterId = LEGACY_CHARACTER_ID_MAP[character.id] ?? character.id;
+    const knownCharacter = knownCharactersById.get(characterId);
+    if (knownCharacter == null) return;
+    mergedById.set(knownCharacter.id, {
+      ...knownCharacter,
+      unlockedAt: character.unlockedAt || new Date().toISOString(),
+    });
+  });
+
+  return Array.from(mergedById.values()).sort(
+    (left, right) => left.requiredCount - right.requiredCount,
+  );
 }
 
 function buildGoals(inputs: GoalInput[], previousGoals: Goal[] = []): Goal[] {
@@ -103,6 +198,7 @@ function buildGoals(inputs: GoalInput[], previousGoals: Goal[] = []): Goal[] {
       id: previous?.id ?? input.id ?? createGoalId(),
       text: input.text.trim(),
       emoji: input.emoji,
+      crewId: input.crewId ?? previous?.crewId,
       done: previous?.done ?? false,
       createdAt: previous?.createdAt ?? new Date().toISOString(),
     };
@@ -114,6 +210,8 @@ function getPersistedState(state: AppState): PersistedState {
     goals: state.goals,
     unlockedCharacters: state.unlockedCharacters,
     totalCompletionCount: state.totalCompletionCount,
+    dailyCompletedGoalIds: state.dailyCompletedGoalIds,
+    completedGoalRecords: state.completedGoalRecords,
     lastResetDate: state.lastResetDate,
     hasOnboarded: state.hasOnboarded,
   };
@@ -151,8 +249,10 @@ async function persistLoad(): Promise<LegacyPersistedState | null> {
 
 export const useAppStore = create<AppState>((set, get) => ({
   goals: [],
-  unlockedCharacters: [],
+  unlockedCharacters: DEFAULT_UNLOCKED_CHARACTERS,
   totalCompletionCount: 0,
+  dailyCompletedGoalIds: [],
+  completedGoalRecords: [],
   lastResetDate: getTodayString(),
   hasOnboarded: false,
   isLoaded: false,
@@ -164,7 +264,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     const today = getTodayString();
 
     if (!saved) {
-      set({ isLoaded: true, lastResetDate: today, hasOnboarded: false });
+      set({
+        unlockedCharacters: DEFAULT_UNLOCKED_CHARACTERS,
+        dailyCompletedGoalIds: [],
+        completedGoalRecords: [],
+        isLoaded: true,
+        lastResetDate: today,
+        hasOnboarded: false,
+      });
       return;
     }
 
@@ -173,12 +280,16 @@ export const useAppStore = create<AppState>((set, get) => ({
       saved.lastResetDate !== today
         ? savedGoals.map((goal) => ({ ...goal, done: false }))
         : savedGoals;
+    const dailyCompletedGoalIds =
+      saved.lastResetDate !== today ? [] : (saved.dailyCompletedGoalIds ?? []);
     const hasOnboarded = saved.hasOnboarded ?? savedGoals.length > 0;
 
     set({
       goals,
-      unlockedCharacters: saved.unlockedCharacters ?? [],
+      unlockedCharacters: withDefaultUnlockedCharacters(saved.unlockedCharacters),
       totalCompletionCount: saved.totalCompletionCount ?? 0,
+      dailyCompletedGoalIds,
+      completedGoalRecords: saved.completedGoalRecords ?? [],
       lastResetDate: today,
       hasOnboarded,
       isLoaded: true,
@@ -186,14 +297,32 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   toggleGoal: (id: string) => {
-    const { goals, totalCompletionCount, unlockedCharacters } = get();
+    const {
+      goals,
+      totalCompletionCount,
+      dailyCompletedGoalIds,
+      completedGoalRecords,
+      unlockedCharacters,
+    } = get();
     const goal = goals.find((item) => item.id === id);
-    if (!goal || goal.done) return;
+    if (!goal) return;
+
+    const nextDone = !goal.done;
+    const isFirstCompletionToday =
+      nextDone && !dailyCompletedGoalIds.includes(id);
 
     const newGoals = goals.map((item) =>
-      item.id === id ? { ...item, done: true } : item,
+      item.id === id ? { ...item, done: nextDone } : item,
     );
-    const newCount = totalCompletionCount + 1;
+    const newDailyCompletedGoalIds = isFirstCompletionToday
+      ? [...dailyCompletedGoalIds, id]
+      : dailyCompletedGoalIds;
+    const newCompletedGoalRecords = isFirstCompletionToday
+      ? updateCompletedGoalRecords(completedGoalRecords, goal)
+      : completedGoalRecords;
+    const newCount = isFirstCompletionToday
+      ? totalCompletionCount + 1
+      : totalCompletionCount;
     const allDone = newGoals.length > 0 && newGoals.every((item) => item.done);
 
     const alreadyUnlockedIds = new Set(
@@ -215,8 +344,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({
       goals: newGoals,
       totalCompletionCount: newCount,
+      dailyCompletedGoalIds: newDailyCompletedGoalIds,
+      completedGoalRecords: newCompletedGoalRecords,
       unlockedCharacters: newUnlockedCharacters,
-      showCelebration: allDone,
+      showCelebration: nextDone && allDone,
       newCharacter: newCharacter ?? null,
     });
 
@@ -225,6 +356,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       goals: newGoals,
       unlockedCharacters: newUnlockedCharacters,
       totalCompletionCount: newCount,
+      dailyCompletedGoalIds: newDailyCompletedGoalIds,
+      completedGoalRecords: newCompletedGoalRecords,
     });
   },
 
@@ -243,6 +376,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({
       goals,
       hasOnboarded: true,
+      dailyCompletedGoalIds: [],
+      completedGoalRecords: [],
       lastResetDate: today,
       showCelebration: false,
     });
@@ -250,6 +385,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       ...getPersistedState(get()),
       goals,
       hasOnboarded: true,
+      dailyCompletedGoalIds: [],
+      completedGoalRecords: [],
       lastResetDate: today,
     });
   },
@@ -269,8 +406,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     const today = getTodayString();
     const nextState: PersistedState = {
       goals: [],
-      unlockedCharacters: [],
+      unlockedCharacters: DEFAULT_UNLOCKED_CHARACTERS,
       totalCompletionCount: 0,
+      dailyCompletedGoalIds: [],
+      completedGoalRecords: [],
       lastResetDate: today,
       hasOnboarded: false,
     };

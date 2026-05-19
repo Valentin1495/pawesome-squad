@@ -1,5 +1,5 @@
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useMemo } from "react";
 
 const EMOJIS = ["🎉", "🎊", "⭐", "🌟", "✨", "🐱", "🐶", "🐰", "💜", "🎈", "🍭", "🦄"];
 
@@ -11,6 +11,7 @@ interface Particle {
   duration: number;
   size: number;
   rotate: number;
+  repeatDelay: number;
 }
 
 function randomBetween(min: number, max: number): number {
@@ -22,15 +23,10 @@ interface ConfettiOverlayProps {
 }
 
 export function ConfettiOverlay({ active }: ConfettiOverlayProps) {
-  const [particles, setParticles] = useState<Particle[]>([]);
+  const particles = useMemo(() => {
+    if (!active) return [];
 
-  useEffect(() => {
-    if (!active) {
-      setParticles([]);
-      return;
-    }
-
-    const list: Particle[] = Array.from({ length: 24 }, (_, i) => ({
+    return Array.from({ length: 24 }, (_, i) => ({
       id: i,
       emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
       x: randomBetween(5, 95),
@@ -38,48 +34,55 @@ export function ConfettiOverlay({ active }: ConfettiOverlayProps) {
       duration: randomBetween(2.5, 4.5),
       size: randomBetween(20, 36),
       rotate: randomBetween(-180, 180),
+      repeatDelay: randomBetween(0.5, 2),
     }));
-    setParticles(list);
   }, [active]);
 
-  if (!active || particles.length === 0) return null;
-
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        pointerEvents: "none",
-        zIndex: 100,
-        overflow: "hidden",
-      }}
-    >
-      {particles.map((p) => (
+    <AnimatePresence>
+      {active && particles.length > 0 && (
         <motion.div
-          key={p.id}
-          initial={{ y: -80, x: `${p.x}vw`, opacity: 1, rotate: 0 }}
-          animate={{
-            y: "110vh",
-            opacity: [1, 1, 0.5, 0],
-            rotate: p.rotate,
-          }}
-          transition={{
-            duration: p.duration,
-            delay: p.delay,
-            ease: "easeIn",
-            repeat: Infinity,
-            repeatDelay: randomBetween(0.5, 2),
-          }}
+          key="confetti"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.35 }}
           style={{
-            position: "absolute",
-            fontSize: p.size,
-            top: 0,
-            left: 0,
+            position: "fixed",
+            inset: 0,
+            pointerEvents: "none",
+            zIndex: 100,
+            overflow: "hidden",
           }}
         >
-          {p.emoji}
+          {particles.map((p) => (
+            <motion.div
+              key={p.id}
+              initial={{ y: -80, x: `${p.x}vw`, opacity: 1, rotate: 0 }}
+              animate={{
+                y: "110vh",
+                opacity: [1, 1, 0.5, 0],
+                rotate: p.rotate,
+              }}
+              transition={{
+                duration: p.duration,
+                delay: p.delay,
+                ease: "easeIn",
+                repeat: Infinity,
+                repeatDelay: p.repeatDelay,
+              }}
+              style={{
+                position: "absolute",
+                fontSize: p.size,
+                top: 0,
+                left: 0,
+              }}
+            >
+              {p.emoji}
+            </motion.div>
+          ))}
         </motion.div>
-      ))}
-    </div>
+      )}
+    </AnimatePresence>
   );
 }

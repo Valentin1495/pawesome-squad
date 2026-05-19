@@ -10,14 +10,14 @@ interface CharacterCardProps {
 }
 
 const CHARACTER_EMOJI_SRC: Record<string, string> = {
-  cat: "https://static.toss.im/2d-emojis/svg/u1F431.svg",
-  dog: "https://static.toss.im/2d-emojis/svg/u1F436.svg",
-  hamster: "https://static.toss.im/2d-emojis/svg/u1F439.svg",
-  rabbit: "https://static.toss.im/2d-emojis/svg/u1F430.svg",
-  fox: "https://static.toss.im/2d-emojis/svg/u1F98A.svg",
-  frog: "https://static.toss.im/2d-emojis/svg/u1F438.svg",
-  unicorn: "https://static.toss.im/2d-emojis/svg/u1F984.svg",
-  panda: "https://static.toss.im/2d-emojis/svg/u1F43C.svg",
+  mung: "https://static.toss.im/2d-emojis/svg/u1F43B.svg",
+  yeowoobi: "https://static.toss.im/2d-emojis/svg/u1F98A.svg",
+  kkumgom: "https://static.toss.im/2d-emojis/svg/u1F428.svg",
+  dalto: "https://static.toss.im/2d-emojis/svg/u1F430.svg",
+  bambi: "https://static.toss.im/2d-emojis/svg/u1F425.svg",
+  nabi: "https://static.toss.im/2d-emojis/svg/u1F431.svg",
+  podo: "https://static.toss.im/2d-emojis/svg/u1F43C.svg",
+  uni: "https://static.toss.im/2d-emojis/svg/u1F984.svg",
 };
 
 function CharacterAvatar({ character }: { character: Character }) {
@@ -115,7 +115,9 @@ export function CharacterCard({
         {character.name}
       </span>
       {!unlocked && (
-        <span style={{ fontSize: 10, color: "#bbb" }}>{character.requiredCount}회 달성</span>
+        <span style={{ fontSize: 10, color: "#bbb" }}>
+          {character.requiredCount}개 달성
+        </span>
       )}
     </motion.div>
   );

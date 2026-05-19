@@ -12,33 +12,45 @@ export function GoalItem({ goal, onToggle }: GoalItemProps) {
   const haptic = useHaptic();
 
   const handleChange = () => {
-    if (goal.done) return;
     haptic("basicMedium");
     onToggle(goal.id);
   };
 
   return (
-    <motion.div
+    <motion.button
+      type="button"
       layout
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      whileTap={goal.done ? {} : { scale: 0.97 }}
+      whileTap={{ scale: 0.97 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
       onClick={handleChange}
       style={{
         display: "flex",
+        width: "100%",
         alignItems: "center",
+        textAlign: "left",
         gap: 14,
         padding: "16px 20px",
         borderRadius: 16,
         backgroundColor: goal.done ? "rgba(149, 117, 205, 0.08)" : "#ffffff",
         border: `1.5px solid ${goal.done ? "rgba(149, 117, 205, 0.3)" : "#f0f0f0"}`,
-        cursor: goal.done ? "default" : "pointer",
+        cursor: "pointer",
         transition: "background-color 0.2s, border-color 0.2s",
         userSelect: "none",
       }}
+      aria-pressed={goal.done}
     >
-      <Checkbox.Circle checked={goal.done} onCheckedChange={handleChange} size={24} />
+      <span
+        onClick={(event) => event.stopPropagation()}
+        style={{ display: "inline-flex", flex: "0 0 auto" }}
+      >
+        <Checkbox.Circle
+          checked={goal.done}
+          onCheckedChange={handleChange}
+          size={24}
+        />
+      </span>
       <span style={{ fontSize: 20 }}>{goal.emoji}</span>
       <span
         style={{
@@ -53,16 +65,6 @@ export function GoalItem({ goal, onToggle }: GoalItemProps) {
       >
         {goal.text}
       </span>
-      {goal.done && (
-        <motion.span
-          initial={{ scale: 0, rotate: -30 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: "spring", stiffness: 500, damping: 20 }}
-          style={{ fontSize: 18, color: "#9575CD", fontWeight: 900 }}
-        >
-          ✓
-        </motion.span>
-      )}
-    </motion.div>
+    </motion.button>
   );
 }

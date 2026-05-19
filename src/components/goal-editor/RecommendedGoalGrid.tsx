@@ -15,6 +15,7 @@ interface RecommendedGoalGridProps {
   isLaunching: boolean;
   isOnboarding: boolean;
   launchingCardKey: string | null;
+  nextCrewEmoji: string;
   nextCrewColor: string;
   onAddGoal: (
     goal: GoalInput,
@@ -32,6 +33,7 @@ export function RecommendedGoalGrid({
   isLaunching,
   isOnboarding,
   launchingCardKey,
+  nextCrewEmoji,
   nextCrewColor,
   onAddGoal,
 }: RecommendedGoalGridProps) {
@@ -44,7 +46,7 @@ export function RecommendedGoalGrid({
     <motion.section
       animate={
         isLaunching
-          ? { opacity: 0.2, y: -8, scale: 0.98 }
+          ? { opacity: 0.28, y: -8, scale: 0.98 }
           : isChainActive
             ? { opacity: 0.72, y: -4, scale: 0.995 }
             : { opacity: 1, y: 0, scale: 1 }
@@ -71,7 +73,7 @@ export function RecommendedGoalGrid({
             display="block"
             style={{ marginTop: 3 }}
           >
-            고른 카드가 크루에게 바로 전달돼요
+            작성한 카드는 다음 크루 {nextCrewEmoji}에게 바로 전달돼요.
           </Text>
         </div>
         <Text typography="t7" fontWeight="bold" color={isFull ? colors.grey500 : colors.purple500}>
@@ -89,7 +91,7 @@ export function RecommendedGoalGrid({
           }}
         >
           <Text typography="t6" fontWeight="bold" color={colors.grey800} display="block">
-            목표판이 가득 찼어요
+            목표가 가득 찼어요
           </Text>
           <Text
             typography="t7"
@@ -97,7 +99,7 @@ export function RecommendedGoalGrid({
             display="block"
             style={{ marginTop: 4, lineHeight: 1.4 }}
           >
-            오늘의 목표판에서 목표를 지우면 다시 추가할 수 있어요.
+            오늘의 미션에서 목표를 지우면 다시 추가할 수 있어요.
           </Text>
         </div>
       ) : (

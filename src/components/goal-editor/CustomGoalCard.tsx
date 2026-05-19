@@ -1,8 +1,9 @@
 import { colors } from "@toss/tds-colors";
-import { Badge, Button, Text } from "@toss/tds-mobile";
+import { Badge, Button, Text, useBottomSheet } from "@toss/tds-mobile";
 import { motion } from "framer-motion";
 import { useRef } from "react";
-import { EMOJI_OPTIONS, MAX_GOAL_TEXT_LENGTH, withAlpha, type AddPhase } from "./constants";
+import { MAX_GOAL_TEXT_LENGTH, withAlpha, type AddPhase } from "./constants";
+import { EmojiPalette } from "./EmojiPalette";
 
 interface CustomGoalCardProps {
   addPhase: AddPhase;
@@ -40,8 +41,40 @@ export function CustomGoalCard({
   setCustomText,
   trimmedCustomTextLength,
 }: CustomGoalCardProps) {
+  const { open: openBottomSheet, close: closeBottomSheet } = useBottomSheet();
   const sourceRef = useRef<HTMLDivElement | null>(null);
   const selectedEmojiRef = useRef<HTMLButtonElement | null>(null);
+
+  const openEmojiPalette = () => {
+    if (isLaunching || isChainActive) return;
+
+    openBottomSheet({
+      header: (
+        <div
+          style={{
+            textAlign: "center",
+            color: colors.grey900,
+            fontSize: 20,
+            fontWeight: 800,
+            lineHeight: 1.35,
+            padding: "0 24px",
+          }}
+        >
+          목표 이모지 선택
+        </div>
+      ),
+      children: (
+        <EmojiPalette
+          selectedEmoji={customEmoji}
+          onSelectEmoji={(nextEmoji) => {
+            setCustomEmoji(nextEmoji);
+            closeBottomSheet();
+          }}
+        />
+      ),
+      onClose: closeBottomSheet,
+    });
+  };
 
   const submitCustomGoal = () => {
     onAddCustomGoal(sourceRef.current, selectedEmojiRef.current ?? sourceRef.current);
@@ -51,7 +84,7 @@ export function CustomGoalCard({
     <motion.section
       animate={
         isLaunching
-          ? { opacity: 0.18, y: -8, scale: 0.98 }
+          ? { opacity: 0.28, y: -8, scale: 0.98 }
           : isChainActive
             ? { opacity: 0.72, y: -4, scale: 0.995 }
             : { opacity: 1, y: 0, scale: 1 }
@@ -102,46 +135,40 @@ export function CustomGoalCard({
           display="block"
           style={{ margin: "0 0 4px" }}
         >
-          내가 쓰는 목표 카드
+          내가 직접 쓰는 목표 카드
         </Text>
-        <Text typography="t7" color={colors.grey600} display="block" style={{ margin: "0 0 8px" }}>
-          작성한 카드는 다음 크루 {nextCrewEmoji}에게 바로 전달돼요.
+        <Text
+          typography="t7"
+          fontWeight="bold"
+          color={nextCrewColor}
+          display="block"
+          style={{ marginBottom: 12 }}
+        >
+          담당 예정 크루 {nextCrewEmoji}
         </Text>
-        <Text typography="t7" fontWeight="bold" color={nextCrewColor} display="block" style={{ marginBottom: 12 }}>
-          담당 예정 {nextCrewEmoji}
-        </Text>
-        <div style={{ display: "flex", gap: 8, marginBottom: 12, overflowX: "auto", paddingBottom: 2 }}>
-          {EMOJI_OPTIONS.map((emoji) => (
-            <button
-              ref={(element) => {
-                if (customEmoji === emoji) {
-                  selectedEmojiRef.current = element;
-                }
-              }}
-              key={emoji}
-              type="button"
-              aria-label={`${emoji} 목표 이모지 선택`}
-              onClick={() => setCustomEmoji(emoji)}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
-                border:
-                  customEmoji === emoji
-                    ? `2px solid ${withAlpha(colors.purple500, 0.78)}`
-                    : `1px solid ${colors.grey200}`,
-                backgroundColor:
-                  customEmoji === emoji ? withAlpha(colors.purple500, 0.08) : colors.grey50,
-                fontSize: 20,
-                lineHeight: 1,
-                flex: "0 0 auto",
-              }}
-            >
-              {emoji}
-            </button>
-          ))}
-        </div>
         <div style={{ display: "flex", gap: 8 }}>
+          <button
+            ref={selectedEmojiRef}
+            type="button"
+            aria-label={`${customEmoji} 목표 이모지 선택`}
+            disabled={isLaunching || isChainActive}
+            onClick={openEmojiPalette}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              border: `1px solid ${withAlpha(nextCrewColor, 0.42)}`,
+              backgroundColor: withAlpha(nextCrewColor, 0.08),
+              color: colors.grey900,
+              fontSize: 20,
+              lineHeight: 1,
+              padding: 0,
+              flex: "0 0 auto",
+              opacity: isLaunching || isChainActive ? 0.5 : 1,
+            }}
+          >
+            {customEmoji}
+          </button>
           <div style={{ flex: 1, minWidth: 0 }}>
             <input
               value={customText}
@@ -182,11 +209,11 @@ export function CustomGoalCard({
         >
           {isDuplicateCustom ? (
             <Text typography="t7" color={colors.red500} display="block" style={{ margin: 0 }}>
-              이미 목표판에 있는 목표예요.
+              이미 미션에 있는 목표예요.
             </Text>
           ) : (
             <Text typography="t7" color={colors.grey500} display="block" style={{ margin: 0 }}>
-              짧게 적을수록 크루가 바로 이해해요.
+              쉽고 간단한 목표부터 시작해 보세요.
             </Text>
           )}
           <Text typography="t7" color={colors.grey500}>

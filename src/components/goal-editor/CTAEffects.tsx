@@ -1,12 +1,13 @@
 import { colors } from "@toss/tds-colors";
 import { AnimatePresence, motion } from "framer-motion";
-import { withAlpha } from "./constants";
+import { type LaunchPhase, withAlpha } from "./constants";
 
 interface CTAEffectsProps {
   canSubmit: boolean;
   crewJumpKey: number;
   ctaHintKey: number;
   isLaunching: boolean;
+  launchPhase: LaunchPhase;
   isOnboarding: boolean;
   needsMoreGoals: boolean;
 }
@@ -16,13 +17,16 @@ export function CTAEffects({
   crewJumpKey,
   ctaHintKey,
   isLaunching,
+  launchPhase,
   isOnboarding,
   needsMoreGoals,
 }: CTAEffectsProps) {
+  const isLaunchActive = launchPhase !== "idle" || isLaunching;
+
   return (
     <>
       <AnimatePresence>
-        {isOnboarding && canSubmit && !isLaunching && (
+        {isOnboarding && canSubmit && !isLaunchActive && (
           <motion.div
             key={`cta-pulse-${crewJumpKey}`}
             initial={{ opacity: 0, scale: 0.98, y: 8 }}
@@ -52,7 +56,7 @@ export function CTAEffects({
       </AnimatePresence>
 
       <AnimatePresence>
-        {needsMoreGoals && !isLaunching && (
+        {needsMoreGoals && !isLaunchActive && (
           <motion.div
             key={`cta-hint-${ctaHintKey}`}
             initial={{ opacity: 0, x: 0 }}
