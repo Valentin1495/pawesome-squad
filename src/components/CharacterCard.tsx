@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { SHARE_REWARD_CHARACTER_ID } from "./goal-editor/constants";
 import type { Character } from "../store/useAppStore";
 
 interface CharacterCardProps {
@@ -18,6 +19,7 @@ const CHARACTER_EMOJI_SRC: Record<string, string> = {
   nabi: "https://static.toss.im/2d-emojis/svg/u1F431.svg",
   podo: "https://static.toss.im/2d-emojis/svg/u1F43C.svg",
   uni: "https://static.toss.im/2d-emojis/svg/u1F984.svg",
+  choco: "https://static.toss.im/2d-emojis/svg/u1F36B.svg",
 };
 
 function CharacterAvatar({ character }: { character: Character }) {
@@ -114,7 +116,10 @@ export function CharacterCard({
       >
         {character.name}
       </span>
-      {!unlocked && (
+      {!unlocked && character.id === SHARE_REWARD_CHARACTER_ID && (
+        <span style={{ fontSize: 10, color: "#bbb" }}>공유 리워드</span>
+      )}
+      {!unlocked && character.id !== SHARE_REWARD_CHARACTER_ID && (
         <span style={{ fontSize: 10, color: "#bbb" }}>
           {character.requiredCount}개 달성
         </span>

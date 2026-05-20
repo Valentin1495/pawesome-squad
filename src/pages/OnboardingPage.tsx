@@ -30,7 +30,7 @@ export function OnboardingPage() {
         mode="onboarding"
         title="오늘의 목표를 골라볼까요?"
         subtitle="목표 카드를 3개 이상 모으면 응원단이 오늘 하루 곁에서 함께 응원해요."
-        submitLabel="응원 받기"
+        submitLabel="미션 시작하기"
         onSubmit={handleSubmit}
       />
     </motion.div>

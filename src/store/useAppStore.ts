@@ -3,6 +3,7 @@ import { create } from "zustand";
 import {
   ALL_CREW_CHARACTERS,
   DEFAULT_CREW_IDS,
+  SHARE_REWARD_CHARACTER_ID,
 } from "../components/goal-editor/constants";
 
 export interface Goal {
@@ -94,6 +95,7 @@ interface AppState extends PersistedState {
   saveGoals: (goals: GoalInput[]) => void;
   updateGoals: (goals: GoalInput[]) => void;
   resetOnboarding: () => void;
+  unlockShareRewardCharacter: () => Character | null;
   setShowCelebration: (show: boolean) => void;
   clearNewCharacter: () => void;
 }
@@ -400,6 +402,42 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     set({ goals, hasOnboarded: true });
     persistSave({ ...getPersistedState(get()), goals, hasOnboarded: true });
+  },
+
+  unlockShareRewardCharacter: () => {
+    const { unlockedCharacters } = get();
+    const alreadyUnlocked = unlockedCharacters.find(
+      (character) => character.id === SHARE_REWARD_CHARACTER_ID,
+    );
+    if (alreadyUnlocked != null) {
+      set({ newCharacter: alreadyUnlocked });
+      return alreadyUnlocked;
+    }
+
+    const rewardCharacter = ALL_CHARACTERS.find(
+      (character) => character.id === SHARE_REWARD_CHARACTER_ID,
+    );
+    if (rewardCharacter == null) return null;
+
+    const unlockedCharacter = {
+      ...rewardCharacter,
+      unlockedAt: new Date().toISOString(),
+    };
+    const newUnlockedCharacters = [
+      ...unlockedCharacters,
+      unlockedCharacter,
+    ].sort((left, right) => left.requiredCount - right.requiredCount);
+
+    set({
+      unlockedCharacters: newUnlockedCharacters,
+      newCharacter: unlockedCharacter,
+    });
+    persistSave({
+      ...getPersistedState(get()),
+      unlockedCharacters: newUnlockedCharacters,
+    });
+
+    return unlockedCharacter;
   },
 
   resetOnboarding: () => {

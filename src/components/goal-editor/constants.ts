@@ -73,6 +73,8 @@ export const DEFAULT_CREW_IDS = [
   "bambi",
 ] as const;
 
+export const SHARE_REWARD_CHARACTER_ID = "choco";
+
 export const ALL_CREW_CHARACTERS: CrewCharacter[] = [
   {
     id: "mung",
@@ -320,6 +322,37 @@ export const ALL_CREW_CHARACTERS: CrewCharacter[] = [
         "이 기세면 오늘 엔딩 좋겠다!",
       ],
       onAllDone: "완벽한 엔딩이야! 유니가 별빛 박수 보내는 중 🦄✨",
+    },
+  },
+  {
+    id: SHARE_REWARD_CHARACTER_ID,
+    emoji: "🍫",
+    name: "초코",
+    role: "공유 리워드 담당",
+    bgColor: CREW_COLORS[0],
+    requiredCount: 9999,
+    messages: {
+      idle: [
+        "친구에게 공유하면 초코가 찾아와요 🍫",
+        "초코는 공유 리워드로만 만날 수 있어요.",
+        "오늘의 작은 성공을 친구에게도 살짝 보내볼까요?",
+      ],
+      onGoalAdd: [
+        "새 목표 좋다! 초코가 응원할게 🍫",
+        "목표가 늘었네요. 달콤하게 가보자!",
+        "좋아요, 초코도 같이 준비할게요.",
+      ],
+      onReady: [
+        "미션 준비 완료! 초코도 같이 갈게요.",
+        "오늘 목표, 달콤하게 끝내봐요 🍫",
+      ],
+      onLaunch: "초코가 달콤한 응원을 싣고 출발해요 🍫",
+      onGoalCheck: [
+        "하나 완료! 초코가 박수 보내요.",
+        "좋아요, 달콤한 흐름이에요 🍫",
+        "멋져요. 다음 목표도 가볍게!",
+      ],
+      onAllDone: "오늘 목표 전부 완료! 초코가 달콤하게 축하해요 🍫",
     },
   },
 ];
