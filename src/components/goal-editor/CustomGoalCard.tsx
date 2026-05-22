@@ -1,9 +1,24 @@
-import { colors } from "@toss/tds-colors";
-import { Badge, Button, Text, useBottomSheet } from "@toss/tds-mobile";
+﻿import { colors } from "@toss/tds-colors";
+import {
+  Badge,
+  Button,
+  Text,
+  TextField,
+  useBottomSheet,
+} from "@toss/tds-mobile";
 import { motion } from "framer-motion";
 import { useRef } from "react";
+import type { CSSProperties } from "react";
 import { MAX_GOAL_TEXT_LENGTH, withAlpha, type AddPhase } from "./constants";
 import { EmojiPalette } from "./EmojiPalette";
+
+const CUSTOM_GOAL_GRID_COLUMNS = "52px minmax(0, 1fr) 58px";
+const CUSTOM_GOAL_TEXT_FIELD_INPUT_STYLE = {
+  color: colors.grey800,
+  fontSize: 15,
+  fontWeight: 700,
+  lineHeight: "22px",
+} as CSSProperties;
 
 interface CustomGoalCardProps {
   addPhase: AddPhase;
@@ -146,7 +161,14 @@ export function CustomGoalCard({
         >
           담당 예정 크루 {nextCrewEmoji}
         </Text>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: CUSTOM_GOAL_GRID_COLUMNS,
+            gap: 2,
+            alignItems: "center",
+          }}
+        >
           <button
             ref={selectedEmojiRef}
             type="button"
@@ -154,13 +176,13 @@ export function CustomGoalCard({
             disabled={isLaunching || isChainActive}
             onClick={openEmojiPalette}
             style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
+              width: 52,
+              height: 52,
+              borderRadius: 14,
               border: `1px solid ${withAlpha(nextCrewColor, 0.42)}`,
               backgroundColor: withAlpha(nextCrewColor, 0.08),
               color: colors.grey900,
-              fontSize: 20,
+              fontSize: 22,
               lineHeight: 1,
               padding: 0,
               flex: "0 0 auto",
@@ -169,8 +191,9 @@ export function CustomGoalCard({
           >
             {customEmoji}
           </button>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <input
+          <div style={{ minWidth: 0 }}>
+            <TextField
+              variant="box"
               value={customText}
               disabled={isChainActive}
               onChange={(event) =>
@@ -180,45 +203,82 @@ export function CustomGoalCard({
                 if (event.key === "Enter" && addPhase === "idle") submitCustomGoal();
               }}
               placeholder="예: 물 마시기"
-              style={{
-                width: "100%",
-                height: 40,
-                borderRadius: 10,
-                border: `1px solid ${colors.grey300}`,
-                padding: "0 12px",
-                opacity: isChainActive ? 0.5 : 1,
-                boxSizing: "border-box",
+              maxLength={MAX_GOAL_TEXT_LENGTH}
+              paddingTop={0}
+              paddingBottom={0}
+              containerProps={{
+                style: {
+                  width: "100%",
+                  opacity: isChainActive ? 0.5 : 1,
+                  "--text-field-container-font-size": "15px",
+                  "--text-field-container-line-height": "22px",
+                  "--text-field-container-children-padding": "0 14px",
+                } as CSSProperties,
               }}
+              style={CUSTOM_GOAL_TEXT_FIELD_INPUT_STYLE}
             />
           </div>
           <Button
             size="medium"
             disabled={!canAddCustom || isLaunching || isChainActive}
             onClick={submitCustomGoal}
+            style={{
+              width: "100%",
+              height: 52,
+              borderRadius: 12,
+              padding: 0,
+            }}
           >
             전달
           </Button>
         </div>
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 8,
-            marginTop: 8,
+            display: "grid",
+            gridTemplateColumns: "52px minmax(0, 1fr) 58px",
+            columnGap: 2,
+            marginTop: 6,
+            alignItems: "start",
           }}
         >
-          {isDuplicateCustom ? (
-            <Text typography="t7" color={colors.red500} display="block" style={{ margin: 0 }}>
-              이미 미션에 있는 목표예요.
+          <span />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: 12,
+              minWidth: 0,
+              padding: "0 8px 0 14px",
+            }}
+          >
+            <Text
+              typography="t7"
+              color={isDuplicateCustom ? colors.red500 : colors.grey500}
+              display="block"
+              style={{
+                lineHeight: 1.35,
+                minWidth: 0,
+                flex: 1,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {isDuplicateCustom
+                ? "이미 미션에 있는 목표예요."
+                : "짧고 간단한 목표부터 시작해 보세요."}
             </Text>
-          ) : (
-            <Text typography="t7" color={colors.grey500} display="block" style={{ margin: 0 }}>
-              쉽고 간단한 목표부터 시작해 보세요.
+            <Text
+              typography="t7"
+              color={colors.grey500}
+              display="block"
+              style={{ lineHeight: 1.35, whiteSpace: "nowrap" }}
+            >
+              {trimmedCustomTextLength}/{MAX_GOAL_TEXT_LENGTH}
             </Text>
-          )}
-          <Text typography="t7" color={colors.grey500}>
-            {trimmedCustomTextLength}/{MAX_GOAL_TEXT_LENGTH}
-          </Text>
+          </div>
+          <span />
         </div>
       </motion.div>
     </motion.section>

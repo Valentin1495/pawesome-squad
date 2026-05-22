@@ -1,11 +1,11 @@
 import { defineConfig } from "@apps-in-toss/web-framework/config";
 
 export default defineConfig({
-  appName: "cutie-squad",
+  appName: "pawesome-squad",
   brand: {
-    displayName: "귀요미 응원단",
+    displayName: "동물 서포터즈",
     primaryColor: "#9575CD",
-    icon: "",
+    icon: "https://static.toss.im/appsintoss/25061/7a4ebc75-089b-446b-8392-8ea40d536a1c.png",
   },
   web: {
     host: "192.168.0.225",

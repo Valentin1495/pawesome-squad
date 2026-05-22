@@ -69,7 +69,6 @@ const STAGE_SPOTLIGHT = {
   beamWidth: 86,
   color: "255,215,64",
 } as const;
-const STREAK_DAYS = 3;
 const WEEK_DAYS = ["월", "화", "수", "목", "금", "토", "일"] as const;
 
 type WeekDay = (typeof WEEK_DAYS)[number];
@@ -345,9 +344,13 @@ function StageLights({ shouldReduceMotion }: { shouldReduceMotion: boolean }) {
   );
 }
 
-function StreakCard({ hasNewCharacter }: { hasNewCharacter: boolean }) {
-  const streakDays = STREAK_DAYS;
-
+function StreakCard({
+  hasNewCharacter,
+  streakDays,
+}: {
+  hasNewCharacter: boolean;
+  streakDays: number;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -445,18 +448,63 @@ function StreakCard({ hasNewCharacter }: { hasNewCharacter: boolean }) {
   );
 }
 
+function formatDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(date: Date, days: number): Date {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+}
+
+function calculateStreakDays(completedMissionDates: string[]): number {
+  const completedDateSet = new Set(completedMissionDates);
+  let streakDays = 0;
+  let cursor = new Date();
+
+  while (completedDateSet.has(formatDate(cursor))) {
+    streakDays += 1;
+    cursor = addDays(cursor, -1);
+  }
+
+  return streakDays;
+}
+
+function calculateShareRewardStreak(shareRewardDates: string[]): number {
+  const rewardDateSet = new Set(shareRewardDates);
+  let streakDays = 0;
+  let cursor = new Date();
+
+  while (rewardDateSet.has(formatDate(cursor))) {
+    streakDays += 1;
+    cursor = addDays(cursor, -1);
+  }
+
+  return streakDays;
+}
+
 function buildWeeklyProgress(
-  streakDays: number,
+  completedMissionDates: string[],
 ): WeeklyProgressProps["weekData"] {
-  const todayIndex = (new Date().getDay() + 6) % 7;
+  const completedDateSet = new Set(completedMissionDates);
+  const today = new Date();
+  const todayIndex = (today.getDay() + 6) % 7;
+  const monday = addDays(today, -todayIndex);
+  const todayKey = formatDate(today);
 
   return WEEK_DAYS.map((day, index) => {
-    if (index === todayIndex) {
+    const date = addDays(monday, index);
+    const dateKey = formatDate(date);
+
+    if (dateKey === todayKey) {
       return { day, status: "today" };
     }
 
-    const daysBeforeToday = todayIndex - index;
-    if (daysBeforeToday > 0 && daysBeforeToday < streakDays) {
+    if (date < today && completedDateSet.has(dateKey)) {
       return { day, status: "done" };
     }
 
@@ -582,7 +630,15 @@ function ShareRewardButton({
   );
 }
 
-function RewardPreview({ character }: { character: Character }) {
+function RewardPreview({
+  character,
+  shareRewardSnackCount,
+  shareRewardStreak,
+}: {
+  character: Character;
+  shareRewardSnackCount: number;
+  shareRewardStreak: number;
+}) {
   return (
     <div style={{ padding: "0 20px 24px" }}>
       <div
@@ -608,7 +664,49 @@ function RewardPreview({ character }: { character: Character }) {
       >
         {character.name}는 공유 리워드로만 만날 수 있어요.
         <br />
-        친구에게 오늘의 달성을 공유하면 해금돼요.
+        처음 공유하면 해금되고, 이후 하루 한 번 공유 리워드 지급 때마다
+        콘솔에 설정한 간식을 받아요.
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 8,
+          marginTop: 10,
+        }}
+      >
+        <div
+          style={{
+            borderRadius: 14,
+            backgroundColor: "#fff7e6",
+            color: "#6f4b00",
+            padding: "12px 10px",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: 18, fontWeight: 900 }}>
+            {shareRewardSnackCount}개
+          </div>
+          <div style={{ fontSize: 11, fontWeight: 800, marginTop: 2 }}>
+            햄찌 간식
+          </div>
+        </div>
+        <div
+          style={{
+            borderRadius: 14,
+            backgroundColor: "#eef8ff",
+            color: "#28506f",
+            padding: "12px 10px",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: 18, fontWeight: 900 }}>
+            {shareRewardStreak}일
+          </div>
+          <div style={{ fontSize: 11, fontWeight: 800, marginTop: 2 }}>
+            공유 연속 기록
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -687,14 +785,19 @@ export function CelebrationPage() {
   const { open: openBottomSheet, close: closeBottomSheet } = useBottomSheet();
   const shouldReduceMotion = useReducedMotion() === true;
   const {
+    claimShareReward,
     clearNewCharacter,
+    completedMissionDates,
     newCharacter,
     setShowCelebration,
-    unlockShareRewardCharacter,
+    shareRewardDates,
+    shareRewardSnackCount,
   } = useAppStore();
   const [sharing, setSharing] = useState(false);
   const contactsViralCleanupRef = useRef<(() => void) | null>(null);
-  const weekData = buildWeeklyProgress(STREAK_DAYS);
+  const streakDays = calculateStreakDays(completedMissionDates);
+  const weekData = buildWeeklyProgress(completedMissionDates);
+  const shareRewardStreak = calculateShareRewardStreak(shareRewardDates);
   const shareRewardCharacter = useMemo(
     () =>
       ALL_CHARACTERS.find(
@@ -779,14 +882,27 @@ export function CelebrationPage() {
         options: { moduleId: CONTACTS_VIRAL_MODULE_ID },
         onEvent: (event) => {
           if (event.type === "sendViral") {
-            const unlockedCharacter = unlockShareRewardCharacter();
+            const rewardResult = claimShareReward(event.data.rewardAmount);
             haptic("success");
-            toast.openToast(
-              `${unlockedCharacter?.name ?? "새 캐릭터"} 해금 완료!`,
-            );
+            if (rewardResult.type === "character-unlocked") {
+              toast.openToast(
+                `${rewardResult.character.name} 해금 + 간식 ${rewardResult.earnedSnacks}개!`,
+              );
+            } else if (rewardResult.type === "snacks-earned") {
+              toast.openToast(
+                `햄찌 간식 ${rewardResult.earnedSnacks}개 받았어요!`,
+              );
+            } else if (rewardResult.type === "already-recorded") {
+              toast.openToast("오늘 공유 리워드는 이미 기록됐어요.");
+            } else {
+              toast.openToast("공유 리워드를 지급할 수 없어요.");
+            }
           }
 
           if (event.type === "close") {
+            if (event.data.closeReason === "noReward") {
+              toast.openToast("오늘 받을 수 있는 공유 리워드는 이미 받았어요.");
+            }
             contactsViralCleanupRef.current?.();
             contactsViralCleanupRef.current = null;
             setSharing(false);
@@ -807,7 +923,7 @@ export function CelebrationPage() {
       toast.openToast("공유 리워드를 실행할 수 없어요.");
       setSharing(false);
     }
-  }, [dialog, haptic, toast, unlockShareRewardCharacter]);
+  }, [claimShareReward, dialog, haptic, toast]);
 
   const handleRewardPreview = useCallback(() => {
     if (shareRewardCharacter == null) return;
@@ -820,10 +936,23 @@ export function CelebrationPage() {
           공유로만 해금되는 전용 캐릭터예요.
         </BottomSheet.HeaderDescription>
       ),
-      children: <RewardPreview character={shareRewardCharacter} />,
+      children: (
+        <RewardPreview
+          character={shareRewardCharacter}
+          shareRewardSnackCount={shareRewardSnackCount}
+          shareRewardStreak={shareRewardStreak}
+        />
+      ),
       onClose: closeBottomSheet,
     });
-  }, [closeBottomSheet, haptic, openBottomSheet, shareRewardCharacter]);
+  }, [
+    closeBottomSheet,
+    haptic,
+    openBottomSheet,
+    shareRewardCharacter,
+    shareRewardSnackCount,
+    shareRewardStreak,
+  ]);
 
   return (
     <div
@@ -907,7 +1036,10 @@ export function CelebrationPage() {
             gap: 10,
           }}
         >
-          <StreakCard hasNewCharacter={newCharacter != null} />
+          <StreakCard
+            hasNewCharacter={newCharacter != null}
+            streakDays={streakDays}
+          />
           <WeeklyProgress weekData={weekData} />
           <motion.div
             initial={{ opacity: 0, y: 10 }}

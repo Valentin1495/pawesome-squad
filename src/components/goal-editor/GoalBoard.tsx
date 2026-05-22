@@ -1,7 +1,14 @@
 ﻿import { colors } from "@toss/tds-colors";
-import { BottomSheet, Button, Text, useBottomSheet } from "@toss/tds-mobile";
+import {
+  BottomSheet,
+  Button,
+  Text,
+  TextField,
+  useBottomSheet,
+} from "@toss/tds-mobile";
 import { AnimatePresence, motion } from "framer-motion";
 import { forwardRef } from "react";
+import type { CSSProperties } from "react";
 import type { GoalInput } from "../../store/useAppStore";
 import {
   ADD_PHASE_DURATIONS,
@@ -15,6 +22,23 @@ import {
 import { EmojiPalette } from "./EmojiPalette";
 import type { VisualCrewSlot } from "./GoalStage";
 import { getRandomCheerLine, type LocalGoalInput } from "./utils";
+
+const GOAL_TEXT_FIELD_CONTAINER_STYLE = {
+  minWidth: 0,
+  flex: 1,
+  position: "relative",
+  zIndex: 1,
+  "--text-field-container-font-size": "14px",
+  "--text-field-container-line-height": "19px",
+  "--text-field-container-children-padding": "0",
+  "--text-field-container-children-gap": "0",
+} as CSSProperties;
+
+const GOAL_TEXT_FIELD_INPUT_STYLE = {
+  fontSize: 14,
+  lineHeight: "19px",
+  fontWeight: 700,
+} as CSSProperties;
 
 interface GoalBoardProps {
   availableCrewCharacters: CrewCharacter[];
@@ -127,7 +151,7 @@ export const GoalBoard = forwardRef<HTMLElement, GoalBoardProps>(
           }
           style={{
             display: shouldUseLaunchLayout ? "grid" : "block",
-            gap: shouldUseLaunchLayout ? 10 : 8,
+            gap: 8,
             gridTemplateColumns: shouldUseLaunchLayout
               ? "repeat(3, minmax(0, 1fr))"
               : undefined,
@@ -182,7 +206,7 @@ export const GoalBoard = forwardRef<HTMLElement, GoalBoardProps>(
 
                 return (
                   <motion.div
-                    layout
+                    layout="position"
                     key={goal._clientId}
                     initial={{
                       opacity: 0,
@@ -257,6 +281,7 @@ export const GoalBoard = forwardRef<HTMLElement, GoalBoardProps>(
                     }}
                     style={{
                       position: "relative",
+                      boxSizing: "border-box",
                       display: "flex",
                       flexDirection: shouldUseLaunchLayout ? "column" : "row",
                       gap: 10,
@@ -271,11 +296,11 @@ export const GoalBoard = forwardRef<HTMLElement, GoalBoardProps>(
                       borderRadius: 16,
                       backgroundColor: colors.white,
                       padding: shouldUseLaunchLayout
-                        ? "18px 8px 10px"
+                        ? "12px 8px 10px"
                         : "10px 10px 10px 12px",
                       marginBottom: shouldUseLaunchLayout ? 0 : 8,
-                      minHeight: shouldUseLaunchLayout ? 104 : undefined,
-                      overflow: shouldUseLaunchLayout ? "hidden" : "visible",
+                      minHeight: shouldUseLaunchLayout ? 92 : undefined,
+                      overflow: "visible",
                     }}
                   >
                     <AnimatePresence>
@@ -284,27 +309,31 @@ export const GoalBoard = forwardRef<HTMLElement, GoalBoardProps>(
                           key="mission-packed-check"
                           initial={{ opacity: 0, scale: 0.4, y: 4 }}
                           animate={{ opacity: 1, scale: [0.4, 1.18, 1], y: 0 }}
-                          exit={{ opacity: 0, scale: 0.8, y: -4 }}
+                          exit={{ opacity: 0, scale: 0.6, y: 0 }}
                           transition={{
                             delay: 0.12 + index * 0.08,
-                            duration: 0.28,
-                            ease: "easeOut",
+                            duration: 0.2,
+                            ease: "easeInOut",
                           }}
                           style={{
                             position: "absolute",
-                            top: shouldUseLaunchLayout ? 6 : -8,
-                            right: shouldUseLaunchLayout ? 6 : -6,
+                            top: 0,
+                            right: 0,
+                            transform: "translate(35%, -35%)",
                             zIndex: 6,
-                            width: shouldUseLaunchLayout ? 22 : 24,
-                            height: shouldUseLaunchLayout ? 22 : 24,
+                            width: 24,
+                            height: 24,
+                            minWidth: 24,
+                            minHeight: 24,
                             borderRadius: 999,
                             display: "flex",
+                            flex: "0 0 auto",
                             alignItems: "center",
                             justifyContent: "center",
                             border: `2px solid ${colors.white}`,
                             backgroundColor: crewColor,
                             color: colors.white,
-                            fontSize: shouldUseLaunchLayout ? 13 : 14,
+                            fontSize: 14,
                             fontWeight: 900,
                             boxShadow: `0 8px 16px ${withAlpha(crewColor, 0.24)}`,
                             pointerEvents: "none",
@@ -489,25 +518,20 @@ export const GoalBoard = forwardRef<HTMLElement, GoalBoardProps>(
                         {goal.text}
                       </div>
                     ) : (
-                      <input
+                      <TextField
+                        variant="line"
                         value={goal.text}
                         readOnly={isBoardLocked}
                         maxLength={MAX_GOAL_TEXT_LENGTH}
                         onChange={(event) =>
                           onUpdateGoal(index, { text: event.target.value })
                         }
-                        style={{
-                          minWidth: 0,
-                          flex: 1,
-                          border: "none",
-                          outline: "none",
-                          color: colors.grey800,
-                          fontWeight: 700,
-                          backgroundColor: "transparent",
-                          textOverflow: "ellipsis",
-                          position: "relative",
-                          zIndex: 1,
+                        paddingTop={0}
+                        paddingBottom={0}
+                        containerProps={{
+                          style: GOAL_TEXT_FIELD_CONTAINER_STYLE,
                         }}
+                        style={GOAL_TEXT_FIELD_INPUT_STYLE}
                       />
                     )}
                     {!isLaunching && !isBoardLocked && (

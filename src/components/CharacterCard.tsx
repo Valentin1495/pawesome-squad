@@ -1,3 +1,4 @@
+import { Badge } from "@toss/tds-mobile";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { SHARE_REWARD_CHARACTER_ID } from "./goal-editor/constants";
@@ -115,15 +116,11 @@ export function CharacterCard({
             position: "absolute",
             top: -8,
             right: -8,
-            backgroundColor: "#FF6B6B",
-            color: "#fff",
-            fontSize: 9,
-            fontWeight: 700,
-            padding: "2px 6px",
-            borderRadius: 99,
           }}
         >
-          NEW
+          <Badge size="xsmall" color="red" variant="fill">
+            NEW
+          </Badge>
         </motion.div>
       )}
       <CharacterAvatar character={character} />

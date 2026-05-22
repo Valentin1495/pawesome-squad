@@ -1,4 +1,4 @@
-# cutie-squad
+# pawesome-squad
 
 Apps in Toss 프로젝트입니다.
 

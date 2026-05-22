@@ -1,4 +1,4 @@
-import { Button, Top } from "@toss/tds-mobile";
+﻿import { Button, Top, useDialog } from "@toss/tds-mobile";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CollectionDrawer } from "../components/CollectionDrawer";
@@ -22,6 +22,7 @@ const INITIAL_CREW_CHARACTERS = getAvailableCrewCharacters([]);
 
 export function MainPage() {
   const haptic = useHaptic();
+  const dialog = useDialog();
   const shouldReduceMotion = useReducedMotion() === true;
   const {
     goals,
@@ -202,15 +203,18 @@ export function MainPage() {
   };
 
   const handleResetOnboarding = () => {
-    const confirmed = window.confirm(
-      "지금까지의 목표와 응원단 기록을 모두 지우고 처음 설정 화면으로 돌아갈까요?",
-    );
-    if (!confirmed) return;
-
-    haptic("success");
-    resetOnboarding();
+    dialog.openAsyncConfirm({
+      title: "처음부터 다시 시작할까요?",
+      description:
+        "지금까지의 목표와 응원단 기록이 모두 지워지고 처음 설정 화면으로 돌아가요.",
+      confirmButton: "다시 시작",
+      cancelButton: "취소",
+      onConfirmClick: async () => {
+        haptic("success");
+        resetOnboarding();
+      },
+    });
   };
-
   const handleStartNewMission = () => {
     haptic("success");
     startNewMission();
@@ -340,11 +344,11 @@ export function MainPage() {
             type="button"
             display="full"
             size="large"
-            variant="weak"
+            variant="fill"
             onClick={() => setEditing(true)}
             style={{
               width: "100%",
-              borderRadius: 14,
+              borderRadius: 999,
               fontSize: 14,
               fontWeight: 800,
             }}
@@ -369,23 +373,25 @@ export function MainPage() {
           누적 달성 {totalCompletionCount}개 · 응원단{" "}
           {unlockedCharacters.length}/{ALL_CREW_CHARACTERS.length}명
         </Button>
-        <Button
-          type="button"
-          display="full"
-          size="large"
-          variant="weak"
-          color="dark"
-          onClick={handleStartNewMission}
-          style={{
-            width: "100%",
-            borderRadius: 999,
-            fontSize: 14,
-            fontWeight: 800,
-            marginTop: 10,
-          }}
-        >
-          새로운 미션 시작하기
-        </Button>
+        {allDone && (
+          <Button
+            type="button"
+            display="full"
+            size="large"
+            variant="weak"
+            color="dark"
+            onClick={handleStartNewMission}
+            style={{
+              width: "100%",
+              borderRadius: 999,
+              fontSize: 14,
+              fontWeight: 800,
+              marginTop: 10,
+            }}
+          >
+            새로운 미션 시작하기
+          </Button>
+        )}
         <Button
           type="button"
           display="full"

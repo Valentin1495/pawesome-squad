@@ -23,7 +23,7 @@ interface ConfettiOverlayProps {
 }
 
 export function ConfettiOverlay({ active }: ConfettiOverlayProps) {
-  const particles = useMemo(() => {
+  const particles = useMemo<Particle[]>(() => {
     if (!active) return [];
 
     return Array.from({ length: 24 }, (_, i) => ({

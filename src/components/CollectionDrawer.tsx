@@ -1,4 +1,4 @@
-import { BottomSheet, Button } from "@toss/tds-mobile";
+import { BottomSheet, Button, Tab } from "@toss/tds-mobile";
 import { useState } from "react";
 import {
   ALL_CHARACTERS,
@@ -8,6 +8,7 @@ import {
 import { CharacterCard } from "./CharacterCard";
 
 type DrawerTab = "goals" | "crew";
+const DRAWER_TABS: DrawerTab[] = ["goals", "crew"];
 
 interface CollectionDrawerProps {
   open: boolean;
@@ -60,27 +61,17 @@ export function CollectionDrawer({
       disableChildrenDragging
     >
       <div style={{ padding: "0 20px 24px" }}>
-        <div
-          style={{
-            display: "flex",
-            padding: 4,
-            borderRadius: 14,
-            backgroundColor: "#f4f4f4",
-            marginBottom: 16,
-          }}
-        >
-          <TabButton
-            selected={selectedTab === "goals"}
-            onClick={() => setSelectedTab("goals")}
+        <div style={{ marginBottom: 16 }}>
+          <Tab
+            size="small"
+            ariaLabel="기록 보관함 보기"
+            onChange={(index) => {
+              setSelectedTab(DRAWER_TABS[index] ?? "goals");
+            }}
           >
-            달성 목표
-          </TabButton>
-          <TabButton
-            selected={selectedTab === "crew"}
-            onClick={() => setSelectedTab("crew")}
-          >
-            응원단
-          </TabButton>
+            <Tab.Item selected={selectedTab === "goals"}>달성 목표</Tab.Item>
+            <Tab.Item selected={selectedTab === "crew"}>응원단</Tab.Item>
+          </Tab>
         </div>
 
         {selectedTab === "goals" &&
@@ -139,37 +130,6 @@ export function CollectionDrawer({
         </Button>
       </div>
     </BottomSheet>
-  );
-}
-
-function TabButton({
-  selected,
-  onClick,
-  children,
-}: {
-  selected: boolean;
-  onClick: () => void;
-  children: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        flex: 1,
-        border: "none",
-        borderRadius: 11,
-        backgroundColor: selected ? "#fff" : "transparent",
-        color: selected ? "#7957b8" : "#666",
-        boxShadow: selected ? "0 4px 12px rgba(0,0,0,0.08)" : "none",
-        fontSize: 14,
-        fontWeight: 800,
-        padding: "10px 12px",
-        cursor: "pointer",
-      }}
-    >
-      {children}
-    </button>
   );
 }
 
