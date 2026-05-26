@@ -130,6 +130,7 @@ interface AppState extends PersistedState {
   startNewMission: () => void;
   resetOnboarding: () => void;
   claimShareReward: (earnedSnacks?: number) => ShareRewardClaimResult;
+  spendShareRewardSnacks: (amount: number) => boolean;
   setShowCelebration: (show: boolean) => void;
   clearNewCharacter: () => void;
 }
@@ -609,6 +610,23 @@ export const useAppStore = create<AppState>((set, get) => ({
       snackCount: nextSnackCount,
       streakDays: nextStreakDays,
     };
+  },
+
+  spendShareRewardSnacks: (amount: number) => {
+    const { shareRewardSnackCount } = get();
+    if (amount <= 0 || shareRewardSnackCount < amount) {
+      return false;
+    }
+
+    const nextSnackCount = shareRewardSnackCount - amount;
+
+    set({ shareRewardSnackCount: nextSnackCount });
+    persistSave({
+      ...getPersistedState(get()),
+      shareRewardSnackCount: nextSnackCount,
+    });
+
+    return true;
   },
 
   resetOnboarding: () => {

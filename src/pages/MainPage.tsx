@@ -8,6 +8,7 @@ import { ProgressSection } from "../components/ProgressSection";
 import { CrewCheerBand } from "../components/goal-editor/CrewCheerBand";
 import {
   ALL_CREW_CHARACTERS,
+  SHARE_REWARD_CHARACTER_ID,
   getAvailableCrewCharacters,
 } from "../components/goal-editor/constants";
 import { useHaptic } from "../hooks/useHaptic";
@@ -19,6 +20,111 @@ function pickRandom<T>(arr: T[]): T {
 
 const PROGRESS_REACTION_DELAY_MS = 450;
 const INITIAL_CREW_CHARACTERS = getAvailableCrewCharacters([]);
+const OVER_CHEER_COST = 5;
+const OVER_CHEER_LINES = [
+  "별거 아니라고요? 햄찌가 들으면 간식 내려놓고 반박합니다.",
+  "작은 목표 하나 끝냈을 뿐인데 햄찌는 이미 현수막 주문했어요.",
+  "체크 하나 했네요. 햄찌는 지금 기립박수 중이에요. 키가 작아서 티가 안 날 뿐.",
+  "햄찌가 방금 회의 열었어요. 안건: 이 사람 왜 이렇게 기특한가.",
+  "햄찌가 당신의 방금 클릭을 올해의 장면 후보에 올렸어요.",
+];
+
+function OverCheerOverlay({
+  message,
+  onClose,
+  shouldReduceMotion,
+}: {
+  message: string;
+  onClose: () => void;
+  shouldReduceMotion: boolean;
+}) {
+  useEffect(() => {
+    const timeoutId = window.setTimeout(onClose, 2600);
+    return () => window.clearTimeout(timeoutId);
+  }, [onClose]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20,
+        backgroundColor: "rgba(25,25,25,0.34)",
+        boxSizing: "border-box",
+      }}
+    >
+      <motion.div
+        initial={
+          shouldReduceMotion ? false : { scale: 0.82, y: 22, rotate: -2 }
+        }
+        animate={
+          shouldReduceMotion
+            ? { scale: 1, y: 0, rotate: 0 }
+            : { scale: [0.82, 1.08, 1], y: 0, rotate: [-2, 2, 0] }
+        }
+        exit={shouldReduceMotion ? undefined : { scale: 0.92, y: 12 }}
+        transition={{ duration: 0.34, ease: "easeOut" }}
+        style={{
+          width: "min(100%, 340px)",
+          borderRadius: 24,
+          backgroundColor: "#fff",
+          padding: "24px 20px 22px",
+          textAlign: "center",
+          boxShadow: "0 24px 70px rgba(0,0,0,0.28)",
+          border: "2px solid rgba(255,215,64,0.62)",
+        }}
+      >
+        <motion.div
+          animate={
+            shouldReduceMotion
+              ? undefined
+              : { y: [0, -8, 0], rotate: [0, -8, 8, 0] }
+          }
+          transition={{ duration: 0.7, repeat: 2, ease: "easeInOut" }}
+          style={{ fontSize: 58, lineHeight: 1, marginBottom: 12 }}
+        >
+          🐹
+        </motion.div>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: 999,
+            backgroundColor: "#fff4c2",
+            color: "#8a6100",
+            fontSize: 11,
+            fontWeight: 900,
+            padding: "5px 9px",
+            marginBottom: 10,
+          }}
+        >
+          햄찌 과장 응원단 출동
+        </div>
+        <p
+          style={{
+            margin: 0,
+            color: "#191919",
+            fontSize: 18,
+            fontWeight: 900,
+            lineHeight: 1.45,
+            wordBreak: "keep-all",
+          }}
+        >
+          {message}
+        </p>
+      </motion.div>
+    </motion.div>
+  );
+}
 
 export function MainPage() {
   const haptic = useHaptic();
@@ -29,6 +135,8 @@ export function MainPage() {
     unlockedCharacters,
     totalCompletionCount,
     completedGoalRecords,
+    shareRewardSnackCount,
+    spendShareRewardSnacks,
     toggleGoal,
     updateGoals,
     startNewMission,
@@ -43,6 +151,7 @@ export function MainPage() {
     pickRandom(INITIAL_CREW_CHARACTERS[0].messages.idle),
   );
   const [crewCheerKey, setCrewCheerKey] = useState(0);
+  const [overCheerMessage, setOverCheerMessage] = useState<string | null>(null);
   const previousMissionCrewSignatureRef = useRef<string | null>(null);
 
   const availableCrewCharacters = useMemo(
@@ -78,6 +187,11 @@ export function MainPage() {
     missionCrewCharacters[selectedCrewIndex] ?? missionCrewCharacters[0];
   const done = goals.filter((goal) => goal.done).length;
   const allDone = goals.length > 0 && done === goals.length;
+  const hasShareRewardCharacter = unlockedCharacters.some(
+    (character) => character.id === SHARE_REWARD_CHARACTER_ID,
+  );
+  const canUseOverCheer =
+    hasShareRewardCharacter && shareRewardSnackCount >= OVER_CHEER_COST;
   const [displayedDone, setDisplayedDone] = useState(done);
   const displayedAllDone = goals.length > 0 && displayedDone === goals.length;
   const today = new Date().toLocaleDateString("ko-KR", {
@@ -220,6 +334,18 @@ export function MainPage() {
     startNewMission();
   };
 
+  const handleUseOverCheer = () => {
+    const spent = spendShareRewardSnacks(OVER_CHEER_COST);
+    if (!spent) {
+      haptic("error");
+      return;
+    }
+
+    haptic("confetti");
+    setOverCheerMessage(pickRandom(OVER_CHEER_LINES));
+    setCrewCheerKey((current) => current + 1);
+  };
+
   if (editing) {
     return (
       <GoalEditor
@@ -310,6 +436,27 @@ export function MainPage() {
         message={crewMessage}
         shouldReduceMotion={shouldReduceMotion}
       />
+
+      {hasShareRewardCharacter && (
+        <div style={{ padding: "0 20px 4px" }}>
+          <Button
+            type="button"
+            display="full"
+            size="medium"
+            variant={canUseOverCheer ? "fill" : "weak"}
+            color={canUseOverCheer ? "dark" : undefined}
+            disabled={!canUseOverCheer}
+            onClick={handleUseOverCheer}
+            style={{
+              borderRadius: 999,
+              fontSize: 13,
+              fontWeight: 900,
+            }}
+          >
+            햄찌 과장 응원 쓰기 · 간식 {shareRewardSnackCount}개
+          </Button>
+        </div>
+      )}
 
       <div
         style={{
@@ -418,6 +565,16 @@ export function MainPage() {
         totalCompletionCount={totalCompletionCount}
         completedGoalRecords={completedGoalRecords}
       />
+
+      <AnimatePresence>
+        {overCheerMessage != null && (
+          <OverCheerOverlay
+            message={overCheerMessage}
+            shouldReduceMotion={shouldReduceMotion}
+            onClose={() => setOverCheerMessage(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

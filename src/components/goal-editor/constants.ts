@@ -463,7 +463,7 @@ export const ALL_CREW_CHARACTERS: CrewCharacter[] = [
       ],
       onGoalAdd: [
         "새 목표 좋다! 햄찌가 응원할게 🐹",
-        "목표가 늘었네요. 볼따구 힘내서 가보자!",
+        "목표가 늘었네요. 힘내서 가보자!",
         "좋아요, 햄찌도 같이 준비할게요.",
       ],
       onReady: [
