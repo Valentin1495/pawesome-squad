@@ -92,7 +92,10 @@ export function CustomGoalCard({
   };
 
   const submitCustomGoal = () => {
-    onAddCustomGoal(sourceRef.current, selectedEmojiRef.current ?? sourceRef.current);
+    onAddCustomGoal(
+      sourceRef.current,
+      selectedEmojiRef.current ?? sourceRef.current,
+    );
   };
 
   return (
@@ -118,7 +121,11 @@ export function CustomGoalCard({
             ? { opacity: [1, 0.86, 0.3], y: -8, scale: [1, 1.03, 0.98] }
             : { opacity: 1, y: 0, scale: 1 }
         }
-        transition={{ delay: isCustomLaunching ? 0 : 0.14, duration: 0.2, ease: "easeOut" }}
+        transition={{
+          delay: isCustomLaunching ? 0 : 0.14,
+          duration: 0.2,
+          ease: "easeOut",
+        }}
         style={{
           position: "relative",
           border: isCustomLaunching
@@ -200,7 +207,8 @@ export function CustomGoalCard({
                 setCustomText(event.target.value.slice(0, MAX_GOAL_TEXT_LENGTH))
               }
               onKeyDown={(event) => {
-                if (event.key === "Enter" && addPhase === "idle") submitCustomGoal();
+                if (event.key === "Enter" && addPhase === "idle")
+                  submitCustomGoal();
               }}
               placeholder="예: 물 마시기"
               maxLength={MAX_GOAL_TEXT_LENGTH}
@@ -267,7 +275,7 @@ export function CustomGoalCard({
             >
               {isDuplicateCustom
                 ? "이미 미션에 있는 목표예요."
-                : "짧고 간단한 목표부터 시작해 보세요."}
+                : "사소한 목표부터 시작 :)"}
             </Text>
             <Text
               typography="t7"

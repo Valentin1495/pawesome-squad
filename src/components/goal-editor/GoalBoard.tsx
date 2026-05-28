@@ -183,7 +183,7 @@ export const GoalBoard = forwardRef<HTMLElement, GoalBoardProps>(
               >
                 <Text typography="t6" color={colors.grey500}>
                   {creationMode === "custom"
-                    ? "사소한 목표를 하나씩 추가해 보세요."
+                    ? "짧고 간단한 목표를 하나씩 추가해 보세요."
                     : "추천 목표 카드를 골라 오늘의 목표를 모아보세요."}
                 </Text>
               </motion.div>
@@ -198,7 +198,10 @@ export const GoalBoard = forwardRef<HTMLElement, GoalBoardProps>(
                 const crewCharacter =
                   availableCrewCharacters.find(
                     (character) => character.id === goal.crewId,
-                  ) ?? availableCrewCharacters[crewIndex % availableCrewCharacters.length];
+                  ) ??
+                  availableCrewCharacters[
+                    crewIndex % availableCrewCharacters.length
+                  ];
                 const crewEmoji =
                   crewSlot?.emoji ??
                   crewCharacter?.emoji ??
